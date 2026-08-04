@@ -1,0 +1,12 @@
+# Zig
+zig-cache/
+.zig-cache/
+zig-out/
+build/
+build-*/
+docgen_tmp/
+zig-pkg/
+.zbscanhelper.zig
+
+# Idea
+.idea/
