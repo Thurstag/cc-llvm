@@ -6,7 +6,7 @@ This part defines all the coding rules that should be respected.
 
 The code should respect the format defined by Zig.
 
-You can verify your code with `zig fmt --check . --exclude .zig-cache --exclude submodules --exclude zig-out --exclude zig-pkg` at the root of the project.
+You can verify your code with `zig fmt --check .` at the root of the project.
 
 ## Copyright
 
