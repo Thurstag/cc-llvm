@@ -7,7 +7,7 @@ module.exports = {
         "scope-enum": [
             2,
             "always",
-            [ "copyright", "git", "api" ]
+            [ "copyright", "git", "api", "check_llvm_version" ]
         ],
         "subject-case": [ 2, "always", "sentence-case" ]
     }

@@ -7,17 +7,20 @@ const std = @import("std");
 const build_info = @import("build.zig.zon");
 const LLVMBuilder = @import("submodules/ghoti/third-party/llvm/LLVMBuilder.zig");
 
-fn checkLlvmVersion(b: *std.Build, module_name: []const u8, module: *std.Build.Module) void {
+fn checkLlvmVersion(b: *std.Build) !void {
     const check_llvm_version = "check_llvm_version";
     const check_llvm_version_step = b.step(check_llvm_version, "Check that the version of this package matches the version of the exposed LLVM.");
+
+    const target = b.graph.host;
+    const llvm = try addLlvmModule(b, target, std.builtin.OptimizeMode.Debug);
 
     var run_check_llvm_version = b.addRunArtifact(b.addExecutable(.{
         .name = check_llvm_version,
         .root_module = b.createModule(.{
             .root_source_file = b.path(std.fmt.comptimePrint("scripts/{s}.zig", .{check_llvm_version})),
-            .target = b.graph.host,
+            .target = target,
             .imports = &.{
-                .{ .name = module_name, .module = module },
+                .{ .name = llvm.name, .module = llvm.module },
             },
         }),
     }));
@@ -99,10 +102,12 @@ fn buildLtoFromTools(builder: *LLVMBuilder) *std.Build.Step.Compile {
     } });
 }
 
-pub fn build(b: *std.Build) !void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+const ModuleWithName = struct {
+    name: []const u8,
+    module: *std.Build.Module,
+};
 
+fn addLlvmModule(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !ModuleWithName {
     const llvm_builder = LLVMBuilder.init(b);
     llvm_builder.build(.{
         // Do not build kaleidoscope
@@ -110,8 +115,8 @@ pub fn build(b: *std.Build) !void {
         .target = target,
     });
 
-    const module_name = "llvm";
-    const module = b.addModule(module_name, .{
+    const name = "llvm";
+    const module = b.addModule(name, .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
@@ -133,7 +138,19 @@ pub fn build(b: *std.Build) !void {
     // TODO: Create a PR to add it to ghoti ?
     module.linkLibrary(buildLtoFromTools(llvm_builder));
 
-    checkLlvmVersion(b, module_name, module);
+    return .{
+        .name = name,
+        .module = module,
+    };
+}
+
+pub fn build(b: *std.Build) !void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    _ = try addLlvmModule(b, target, optimize);
+
+    _ = try checkLlvmVersion(b);
 
     _ = try addLicenses(b, target.result);
 }
