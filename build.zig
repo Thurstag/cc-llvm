@@ -12,7 +12,11 @@ fn checkLlvmVersion(b: *std.Build) !void {
     const check_llvm_version_step = b.step(check_llvm_version, "Check that the version of this package matches the version of the exposed LLVM.");
 
     const target = b.graph.host;
-    const llvm = try addLlvmModule(b, target, std.builtin.OptimizeMode.Debug);
+    const llvm = try createOrAddLlvmModule(struct {
+        pub fn call(builder: *std.Build, _: []const u8, options: std.Build.Module.CreateOptions) *std.Build.Module {
+            return builder.createModule(options);
+        }
+    }.call, b, target, std.builtin.OptimizeMode.Debug);
 
     var run_check_llvm_version = b.addRunArtifact(b.addExecutable(.{
         .name = check_llvm_version,
@@ -107,7 +111,9 @@ const ModuleWithName = struct {
     module: *std.Build.Module,
 };
 
-fn addLlvmModule(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !ModuleWithName {
+const CreateOrAddModule = fn (*std.Build, []const u8, std.Build.Module.CreateOptions) *std.Build.Module;
+
+fn createOrAddLlvmModule(createOrAddModule: *const CreateOrAddModule, b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !ModuleWithName {
     const llvm_builder = LLVMBuilder.init(b);
     llvm_builder.build(.{
         // Do not build kaleidoscope
@@ -116,7 +122,7 @@ fn addLlvmModule(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.
     });
 
     const name = "llvm";
-    const module = b.addModule(name, .{
+    const module = createOrAddModule(b, name, .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
@@ -148,7 +154,11 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    _ = try addLlvmModule(b, target, optimize);
+    _ = try createOrAddLlvmModule(struct {
+        pub fn call(builder: *std.Build, name: []const u8, options: std.Build.Module.CreateOptions) *std.Build.Module {
+            return builder.addModule(name, options);
+        }
+    }.call, b, target, optimize);
 
     _ = try checkLlvmVersion(b);
 
