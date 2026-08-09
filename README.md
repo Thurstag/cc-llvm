@@ -1,5 +1,7 @@
 # Cross-compiled LLVM
 
+[![Continuous Integration](https://github.com/rekka-lang/cc-llvm/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/rekka-lang/cc-llvm/actions/workflows/ci.yml)
+
 A library exposing the C API of LLVM and offering cross-compilation thanks to [Zig](https://ziglang.org/). It mainly relies on the work done by [Trevor Swan](https://github.com/trevorswan11) for [ghoti](https://github.com/trevorswan11/ghoti).
 
 ## Getting started
