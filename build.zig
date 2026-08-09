@@ -7,7 +7,7 @@ const std = @import("std");
 const build_info = @import("build.zig.zon");
 const LLVMBuilder = @import("submodules/ghoti/third-party/llvm/LLVMBuilder.zig");
 
-fn checkLlvmVersion(b: *std.Build) !void {
+fn checkLlvmVersion(b: *std.Build) !*std.Build.Step {
     const check_llvm_version = "check_llvm_version";
     const check_llvm_version_step = b.step(check_llvm_version, "Check that the version of this package matches the version of the exposed LLVM.");
 
@@ -32,7 +32,7 @@ fn checkLlvmVersion(b: *std.Build) !void {
 
     check_llvm_version_step.dependOn(&run_check_llvm_version.step);
 
-    b.getInstallStep().dependOn(check_llvm_version_step);
+    return check_llvm_version_step;
 }
 
 fn addLicenses(b: *std.Build, target: std.Target) !*std.Build.Step.WriteFile {
@@ -150,6 +150,23 @@ fn createOrAddLlvmModule(createOrAddModule: *const CreateOrAddModule, b: *std.Bu
     };
 }
 
+fn addCheckStep(b: *std.Build) !void {
+    const checks: [] const *std.Build.Step = &.{ try checkLlvmVersion(b) };
+
+    var description: std.ArrayList(u8) = .empty;
+    defer description.deinit(b.allocator);
+    try description.appendSlice(b.allocator, "Run the following checks:");
+    for (checks, 0..) |check, i| {
+        try description.appendSlice(b.allocator, if (i == 0) " " else ", ");
+        try description.appendSlice(b.allocator, check.name);
+    }
+
+    const step = b.step("check", description.items);
+    for (checks) |check| {
+        step.dependOn(check);
+    }
+}
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -160,7 +177,7 @@ pub fn build(b: *std.Build) !void {
         }
     }.call, b, target, optimize);
 
-    _ = try checkLlvmVersion(b);
-
     _ = try addLicenses(b, target.result);
+
+    try addCheckStep(b);
 }
