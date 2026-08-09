@@ -25,8 +25,8 @@ jobs:
           uses: wagoid/commitlint-github-action@v6
           with:
             helpURL: https://github.com/rekka-lang/cc-llvm/tree/develop?tab=contributing-ov-file#commits
-  build:
-    name: Build project
+  check:
+    name: Check project
     runs-on: blacksmith-4vcpu-ubuntu-2404
     if: ${{ !github.event.repository.fork }}
     steps:
@@ -45,5 +45,5 @@ jobs:
             key: zig-pkg-${{ hashFiles('**/build.zig.zon') }}-zig${{ env.ZIG_VERSION }}
       -   name: Fetch dependencies
           run: zig build --fetch
-      -   name: Zig build
-          run: zig build --summary all
+      -   name: Zig check
+          run: zig build --summary all check
