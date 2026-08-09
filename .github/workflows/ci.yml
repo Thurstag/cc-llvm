@@ -28,6 +28,7 @@ jobs:
   build:
     name: Build project
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    if: ${{ !github.event.repository.fork }}
     steps:
       -   name: Checkout project
           uses: actions/checkout@v7
