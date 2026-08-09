@@ -5,6 +5,7 @@
 const std = @import("std");
 
 const build_info = @import("build.zig.zon");
+const ghoti_build_info = @import("submodules/ghoti/build.zig.zon");
 const LLVMBuilder = @import("submodules/ghoti/third-party/llvm/LLVMBuilder.zig");
 
 fn checkLlvmVersion(b: *std.Build) !*std.Build.Step {
@@ -150,8 +151,32 @@ fn createOrAddLlvmModule(createOrAddModule: *const CreateOrAddModule, b: *std.Bu
     };
 }
 
+fn checkGhotiDependencies(b: *std.Build) !*std.Build.Step {
+    const check_ghoti_dependencies = b.step("check_ghoti_dependencies", "Check that the ghoti dependencies defined in build.zig.zon are the same as the ones in the submodule.");
+    check_ghoti_dependencies.makeFn = struct {
+        pub fn make(step: *std.Build.Step, _: std.Build.Step.MakeOptions) !void {
+            const Dependencies = @TypeOf(build_info.dependencies);
+            const GhotiDependencies = @TypeOf(build_info.dependencies);
+
+            inline for (std.meta.fields(Dependencies)) |dependency_field| {
+                const dependency = @field(build_info.dependencies, dependency_field.name);
+
+                if (@hasField(GhotiDependencies, dependency_field.name)) {
+                    const ghoti_dependency = @field(ghoti_build_info.dependencies, dependency_field.name);
+
+                    if (!std.mem.eql(u8, dependency.url, ghoti_dependency.url)) {
+                        return step.fail("'{s}' dependency should have the url defined in ghoti's build.zig.zon: {s}", .{ dependency_field.name, ghoti_dependency.url });
+                    }
+                }
+            }
+        }
+    }.make;
+
+    return check_ghoti_dependencies;
+}
+
 fn addCheckStep(b: *std.Build) !void {
-    const checks: [] const *std.Build.Step = &.{ try checkLlvmVersion(b) };
+    const checks: [] const *std.Build.Step = &.{ try checkLlvmVersion(b), try checkGhotiDependencies(b) };
 
     var description: std.ArrayList(u8) = .empty;
     defer description.deinit(b.allocator);
