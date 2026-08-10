@@ -46,4 +46,4 @@ jobs:
       -   name: Fetch dependencies
           run: zig build --fetch
       -   name: Zig run install+check
-          run: zig build --summary all install check
+          run: zig build --summary all -Dtarget=x86_64-linux-musl install check
