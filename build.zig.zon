@@ -11,27 +11,22 @@
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .stdx = .{
-            // Should match the version used by ghoti
             .url = "https://github.com/trevorswan11/stdx/archive/refs/tags/v2.3.0.tar.gz",
             .hash = "stdx-2.3.0-dNitg2_aCACsdfUFtq_FR0Qd-0qjnUa-62rBXzH-GW8f",
         },
         .llvm = .{
-            // Should match the version used by ghoti
             .url = "https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-21.1.8.tar.gz",
             .hash = "N-V-__8AABpqQW-SXByMsTbdc-Sm0xuxtXzfQBvflhYdUshy",
         },
         .libxml2 = .{
-            // Should match the version used by ghoti
             .url = "https://gitlab.gnome.org/GNOME/libxml2/-/archive/v2.15.1/libxml2-v2.15.1.tar.gz",
             .hash = "N-V-__8AAGDwMQF2IHBGW-iuy3HD7ZCfVEALdBc3_ZVjfUV3",
         },
         .zlib = .{
-            // Should match the version used by ghoti
             .url = "https://github.com/madler/zlib/archive/refs/tags/v1.3.2.tar.gz",
             .hash = "N-V-__8AAI4ANwDM8MWhHTUFLKfvLE_n2NQk6mh0sFDzhTqO",
         },
         .zstd = .{
-            // Should match the version used by ghoti
             .url = "https://github.com/facebook/zstd/archive/refs/tags/v1.5.7.tar.gz",
             .hash = "N-V-__8AAPZ7fwBg4JoCzM_0o2A8wxH2hsUUeiU1iuZv53L5",
         },
@@ -49,6 +44,7 @@
         "build.zig.zon",
         "LICENSE",
         "src",
+        "install",
         "scripts/copy_zig_install_files.zig",
 
         "submodules/ghoti/build.zig",

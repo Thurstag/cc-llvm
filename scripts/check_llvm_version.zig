@@ -21,15 +21,12 @@ pub fn main(init: std.process.Init) !void {
     llvm.core.LLVMGetVersion(&major, &minor, &patch);
 
     const packed_version = .{ major, minor, patch };
-    std.debug.print("The version of LLVM is \"{}.{}.{}\".\n", packed_version);
 
     const version = try std.fmt.allocPrint(init.gpa, "{}.{}.{}", packed_version);
     defer init.gpa.free(version);
     if (std.SemanticVersion.order(try std.SemanticVersion.parse(version), try std.SemanticVersion.parse(expected)) != .eq) {
-        const message = try std.fmt.allocPrint(init.gpa, "The version of LLVM is not the version of this package (expected: {s}).\n", .{expected});
-        defer init.gpa.free(message);
-        @panic(message);
-    } else {
-        std.debug.print("The version of LLVM matches the version of this package.\n", .{});
+        std.log.err("The version of LLVM is \"{}.{}.{}\".", packed_version);
+        std.log.err("The version of LLVM is not the version of this package (expected: {s}).", .{expected});
+        std.process.exit(1);
     }
 }
