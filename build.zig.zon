@@ -44,6 +44,7 @@
         "build.zig.zon",
         "LICENSE",
         "src",
+        "install",
         "scripts/copy_zig_install_files.zig",
 
         "submodules/ghoti/build.zig",
