@@ -1,6 +1,6 @@
 name: Continuous Integration
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 env:
   ZIG_VERSION: 0.16.0
@@ -10,40 +10,40 @@ jobs:
     name: Verify coding rules compliance
     runs-on: ubuntu-latest
     steps:
-      -   name: Checkout project
-          uses: actions/checkout@v7
-          with:
-            # Allow the validation of all commits
-            fetch-depth: 0
-      -   name: Setup Zig
-          uses: mlugg/setup-zig@v2
-          with:
-            version: ${{ env.ZIG_VERSION }}
-      -   name: Verify code
-          run: zig fmt --check . && echo "All files respect the code style."
-      -   name: Verify commits
-          uses: wagoid/commitlint-github-action@v6
-          with:
-            helpURL: https://github.com/rekka-lang/cc-llvm/tree/develop?tab=contributing-ov-file#commits
-  build:
-    name: Build project
+      - name: Checkout project
+        uses: actions/checkout@v7
+        with:
+          # Allow the validation of all commits
+          fetch-depth: 0
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+      - name: Verify code
+        run: zig fmt --check . && echo "All files respect the code style."
+      - name: Verify commits
+        uses: wagoid/commitlint-github-action@v6
+        with:
+          helpURL: https://github.com/rekka-lang/cc-llvm/tree/develop?tab=contributing-ov-file#commits
+  install_check:
+    name: Install/check project
     runs-on: blacksmith-4vcpu-ubuntu-2404
     if: ${{ !github.event.repository.fork }}
     steps:
-      -   name: Checkout project
-          uses: actions/checkout@v7
-          with:
-            submodules: 'recursive'
-      -   name: Setup Zig
-          uses: mlugg/setup-zig@v2
-          with:
-            version: ${{ env.ZIG_VERSION }}
-      -   name: Cache zig-pkg
-          uses: actions/cache@v6
-          with:
-            path: '**/zig-pkg'
-            key: zig-pkg-${{ hashFiles('**/build.zig.zon') }}-zig${{ env.ZIG_VERSION }}
-      -   name: Fetch dependencies
-          run: zig build --fetch
-      -   name: Zig build
-          run: zig build --summary all
+      - name: Checkout project
+        uses: actions/checkout@v7
+        with:
+          submodules: 'recursive'
+      - name: Setup Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+      - name: Cache zig-pkg
+        uses: actions/cache@v6
+        with:
+          path: '**/zig-pkg'
+          key: zig-pkg-${{ hashFiles('**/build.zig.zon') }}-zig${{ env.ZIG_VERSION }}
+      - name: Fetch dependencies
+        run: zig build --fetch
+      - name: Zig run install+check
+        run: zig build --summary all -Dtarget=x86_64-linux-musl install check
