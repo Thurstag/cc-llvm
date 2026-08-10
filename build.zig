@@ -155,13 +155,10 @@ fn checkGhotiDependencies(b: *std.Build) !*std.Build.Step {
     const check_ghoti_dependencies = b.step("check_ghoti_dependencies", "Check that the ghoti dependencies defined in build.zig.zon are the same as the ones in the submodule.");
     check_ghoti_dependencies.makeFn = struct {
         pub fn make(step: *std.Build.Step, _: std.Build.Step.MakeOptions) !void {
-            const Dependencies = @TypeOf(build_info.dependencies);
-            const GhotiDependencies = @TypeOf(build_info.dependencies);
-
-            inline for (std.meta.fields(Dependencies)) |dependency_field| {
+            inline for (std.meta.fields(@TypeOf(build_info.dependencies))) |dependency_field| {
                 const dependency = @field(build_info.dependencies, dependency_field.name);
 
-                if (@hasField(GhotiDependencies, dependency_field.name)) {
+                if (@hasField(@TypeOf(ghoti_build_info.dependencies), dependency_field.name)) {
                     const ghoti_dependency = @field(ghoti_build_info.dependencies, dependency_field.name);
 
                     if (!std.mem.eql(u8, dependency.url, ghoti_dependency.url)) {
