@@ -175,8 +175,78 @@ fn checkGhotiDependencies(b: *std.Build) !*std.Build.Step {
     return check_ghoti_dependencies;
 }
 
+const BuildZigZonName = enum {
+    cc_llvm,
+    cc_llvm_x86_64_linux_musl,
+};
+
+const BuildZigZon = struct {
+    name: BuildZigZonName,
+    version: []const u8,
+    fingerprint: u64,
+    minimum_zig_version: []const u8,
+    dependencies: struct {},
+    paths: []const []const u8,
+};
+
+fn checkInstallBuildZigZonFiles(b: *std.Build) !*std.Build.Step {
+    const check = b.step("check_install_build.zig.zon_files", "Check that the install build.zig.zon files have the correct information.");
+    check.makeFn = struct {
+        pub fn make(step: *std.Build.Step, _: std.Build.Step.MakeOptions) !void {
+            const files: []const BuildZigZon = &.{@import("install/build-x86_64-linux-musl.zig.zon")};
+
+            var fingerprints: std.AutoHashMap(u64, void) = .init(step.owner.allocator);
+            defer fingerprints.deinit();
+            try fingerprints.put(build_info.fingerprint, {});
+
+            var names: std.EnumMap(BuildZigZonName, void) = .init(.{});
+            names.put(build_info.name, {});
+
+            for (files) |file| {
+                try fingerprints.put(file.fingerprint, {});
+                names.put(file.name, {});
+
+                if (!std.mem.eql(u8, file.version, build_info.version)) {
+                    return step.fail("'{}' should have the version: {s}", .{ file.name, build_info.version });
+                }
+                if (!std.mem.eql(u8, file.minimum_zig_version, build_info.minimum_zig_version)) {
+                    return step.fail("'{}' should have the minimum_zig_version: {s}", .{ file.name, build_info.minimum_zig_version });
+                }
+            }
+
+            if (fingerprints.count() != (files.len + 1)) {
+                return step.fail("There is a duplicate fingerprint in a build.zig.zon", .{});
+            }
+            if (names.count() != (files.len + 1)) {
+                return step.fail("There is a duplicate name in a build.zig.zon", .{});
+            }
+
+            const install_directory = try std.Io.Dir.openDir(step.owner.build_root.handle, step.owner.graph.io, "install", .{ .iterate = true });
+            defer install_directory.close(step.owner.graph.io);
+
+            var install_directory_iterator = install_directory.iterate();
+            var zigZonFilesCount: u8 = 0;
+            while (try install_directory_iterator.next(step.owner.graph.io)) |entry| {
+                if (std.mem.endsWith(u8, entry.name, ".zig.zon")) {
+                    zigZonFilesCount += 1;
+                }
+            }
+
+            if (files.len != zigZonFilesCount) {
+                return step.fail("Not all install build.zig.zon files are checked", .{});
+            }
+        }
+    }.make;
+
+    return check;
+}
+
 fn addCheckStep(b: *std.Build) !void {
-    const checks: [] const *std.Build.Step = &.{ try checkLlvmVersion(b), try checkGhotiDependencies(b) };
+    const checks: []const *std.Build.Step = &.{
+        try checkLlvmVersion(b),
+        try checkGhotiDependencies(b),
+        try checkInstallBuildZigZonFiles(b),
+    };
 
     var description: std.ArrayList(u8) = .empty;
     defer description.deinit(b.allocator);
@@ -192,17 +262,64 @@ fn addCheckStep(b: *std.Build) !void {
     }
 }
 
+fn install(b: *std.Build, module: *std.Build.Module, licenses: *std.Build.Step.WriteFile, target: std.Target.Query) !void {
+    const triple = try target.zigTriple(b.allocator);
+    defer b.allocator.free(triple);
+
+    const step = b.getInstallStep();
+    for (module.link_objects.items) |library| {
+        switch (library) {
+            .other_step => |compile| step.dependOn(&b.addInstallArtifact(compile, .{
+                .dest_dir = .{ .override = .{ .custom = b.pathJoin(&.{ triple, "lib" }) } },
+                .h_dir = .{ .override = .{ .custom = b.pathJoin(&.{ triple, "include" }) } },
+            }).step),
+            .assembly_file => @panic("The copy from a 'assembly_file' LinkObject is not implemented"),
+            .c_source_file => @panic("The copy from a 'c_source_file' LinkObject is not implemented"),
+            .c_source_files => @panic("The copy from a 'c_source_files' LinkObject is not implemented"),
+            .static_path => @panic("The copy from a 'static_path' LinkObject is not implemented"),
+            .system_lib => @panic("The copy from a 'system_lib' LinkObject is not implemented"),
+            .win32_resource_file => @panic("The copy from a 'win32_resource_file' LinkObject is not implemented"),
+        }
+    }
+
+    const install_dir: std.Build.InstallDir = .{ .custom = triple };
+    step.dependOn(&b.addInstallDirectory(.{
+        .source_dir = licenses.getDirectory(),
+        .install_dir = install_dir,
+        .install_subdir = "third-party",
+    }).step);
+
+    step.dependOn(&b.addInstallDirectory(.{
+        .source_dir = b.path("src"),
+        .install_dir = install_dir,
+        .install_subdir = "src",
+    }).step);
+
+    step.dependOn(&b.addInstallDirectory(.{
+        .install_dir = install_dir,
+        .install_subdir = b.pathJoin(&.{ "include", "llvm-c" }),
+        .source_dir = b.dependency("llvm", .{}).path("llvm/include/llvm-c"),
+    }).step);
+
+    step.dependOn(&b.addInstallFileWithDir(b.path("install/build.zig"), install_dir, "build.zig").step);
+    const build_zig_zon = try std.fmt.allocPrint(b.allocator, "install/build-{s}.zig.zon", .{triple});
+    defer b.allocator.free(build_zig_zon);
+    step.dependOn(&b.addInstallFileWithDir(b.path(build_zig_zon), install_dir, "build.zig.zon").step);
+}
+
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    _ = try createOrAddLlvmModule(struct {
+    const moduleWithName = try createOrAddLlvmModule(struct {
         pub fn call(builder: *std.Build, name: []const u8, options: std.Build.Module.CreateOptions) *std.Build.Module {
             return builder.addModule(name, options);
         }
     }.call, b, target, optimize);
 
-    _ = try addLicenses(b, target.result);
+    const licenses = try addLicenses(b, target.result);
+
+    try install(b, moduleWithName.module, licenses, target.query);
 
     try addCheckStep(b);
 }
