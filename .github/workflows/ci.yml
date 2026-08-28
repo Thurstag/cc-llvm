@@ -8,9 +8,6 @@ on:
     branches:
       - '**'
 
-env:
-  ZIG_VERSION: 0.16.0
-
 jobs:
   verify:
     name: Verify coding rules compliance
@@ -22,9 +19,9 @@ jobs:
           # Allow the validation of all commits
           fetch-depth: 0
       - name: Setup Zig
-        uses: mlugg/setup-zig@v2
+        uses: ./.github/workflows/setup-zig
         with:
-          version: ${{ env.ZIG_VERSION }}
+          cache_files: false
       - name: Verify code
         run: zig fmt --check . && echo "All files respect the code style."
       - name: Verify commits
@@ -41,14 +38,7 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Setup Zig
-        uses: mlugg/setup-zig@v2
-        with:
-          version: ${{ env.ZIG_VERSION }}
-      - name: Cache zig-pkg
-        uses: actions/cache@v6
-        with:
-          path: '**/zig-pkg'
-          key: zig-pkg-${{ hashFiles('**/build.zig.zon') }}-zig${{ env.ZIG_VERSION }}
+        uses: ./.github/workflows/setup-zig
       - name: Fetch dependencies
         run: zig build --fetch
       - name: Zig run install+check
