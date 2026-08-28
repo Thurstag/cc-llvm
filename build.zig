@@ -175,6 +175,7 @@ fn checkGhotiDependencies(b: *std.Build) !*std.Build.Step {
 const BuildZigZonName = enum {
     cc_llvm,
     cc_llvm_x86_64_linux_musl,
+    cc_llvm_x86_64_linux_gnu,
 };
 
 const BuildZigZon = struct {
@@ -190,7 +191,10 @@ fn checkInstallBuildZigZonFiles(b: *std.Build) !*std.Build.Step {
     const check = b.step("check_install_build.zig.zon_files", "Check that the install build.zig.zon files have the correct information.");
     check.makeFn = struct {
         pub fn make(step: *std.Build.Step, _: std.Build.Step.MakeOptions) !void {
-            const files: []const BuildZigZon = &.{@import("install/build-x86_64-linux-musl.zig.zon")};
+            const files: []const BuildZigZon = &.{
+                @import("install/build-x86_64-linux-musl.zig.zon"),
+                @import("install/build-x86_64-linux-gnu.zig.zon"),
+            };
 
             var fingerprints: std.AutoHashMap(u64, void) = .init(step.owner.allocator);
             defer fingerprints.deinit();
