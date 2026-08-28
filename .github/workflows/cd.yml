@@ -1,0 +1,37 @@
+name: Continuous Deployment
+
+on:
+  push:
+    tags:
+      - '**'
+
+jobs:
+  archive_repository:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v7
+      - name: Archive repository
+        uses: qmonnet/git-archive-all-action@v1
+        with:
+          prefix: /
+          output-files: source.zip
+      - name: Upload archived repository
+        uses: actions/upload-artifact@v7
+        with:
+          name: 'source'
+          path: source.zip
+  publish_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: archive_repository
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          fail_on_unmatched_files: true
+          files: |
+            source.zip
