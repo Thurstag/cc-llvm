@@ -302,6 +302,8 @@ fn install(b: *std.Build, module: *std.Build.Module, licenses: *std.Build.Step.W
     const build_zig_zon = try std.fmt.allocPrint(b.allocator, "install/build-{s}.zig.zon", .{triple});
     defer b.allocator.free(build_zig_zon);
     step.dependOn(&b.addInstallFileWithDir(b.path(build_zig_zon), install_dir, "build.zig.zon").step);
+
+    step.dependOn(&b.addInstallFileWithDir(b.path("LICENSE"), install_dir, "LICENSE").step);
 }
 
 pub fn build(b: *std.Build) !void {
