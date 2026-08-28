@@ -13,6 +13,7 @@
     .paths = .{
         "build.zig",
         "build.zig.zon",
+        "LICENSE",
         "src",
         "lib",
         "third-party",
