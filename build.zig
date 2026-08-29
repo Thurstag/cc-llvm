@@ -175,6 +175,7 @@ fn checkGhotiDependencies(b: *std.Build) !*std.Build.Step {
 const BuildZigZonName = enum {
     cc_llvm,
     cc_llvm_x86_64_linux_musl,
+    cc_llvm_x86_64_linux_gnu,
 };
 
 const BuildZigZon = struct {
@@ -190,7 +191,10 @@ fn checkInstallBuildZigZonFiles(b: *std.Build) !*std.Build.Step {
     const check = b.step("check_install_build.zig.zon_files", "Check that the install build.zig.zon files have the correct information.");
     check.makeFn = struct {
         pub fn make(step: *std.Build.Step, _: std.Build.Step.MakeOptions) !void {
-            const files: []const BuildZigZon = &.{@import("install/build-x86_64-linux-musl.zig.zon")};
+            const files: []const BuildZigZon = &.{
+                @import("install/build-x86_64-linux-musl.zig.zon"),
+                @import("install/build-x86_64-linux-gnu.zig.zon"),
+            };
 
             var fingerprints: std.AutoHashMap(u64, void) = .init(step.owner.allocator);
             defer fingerprints.deinit();
@@ -302,6 +306,8 @@ fn install(b: *std.Build, module: *std.Build.Module, licenses: *std.Build.Step.W
     const build_zig_zon = try std.fmt.allocPrint(b.allocator, "install/build-{s}.zig.zon", .{triple});
     defer b.allocator.free(build_zig_zon);
     step.dependOn(&b.addInstallFileWithDir(b.path(build_zig_zon), install_dir, "build.zig.zon").step);
+
+    step.dependOn(&b.addInstallFileWithDir(b.path("LICENSE"), install_dir, "LICENSE").step);
 }
 
 pub fn build(b: *std.Build) !void {
