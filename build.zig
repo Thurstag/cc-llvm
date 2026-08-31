@@ -115,7 +115,7 @@ const ModuleWithName = struct {
 const CreateOrAddModule = fn (*std.Build, []const u8, std.Build.Module.CreateOptions) *std.Build.Module;
 
 fn createOrAddLlvmModule(createOrAddModule: *const CreateOrAddModule, b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !ModuleWithName {
-    const llvm_builder = LLVMBuilder.init(b);
+    const llvm_builder = LLVMBuilder.init(b, .{ .optimize = optimize });
     llvm_builder.build(.{
         // Do not build kaleidoscope
         .behavior = .package,
