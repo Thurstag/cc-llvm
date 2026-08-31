@@ -39,7 +39,7 @@ jobs:
       - name: Fetch dependencies
         run: zig build --fetch
       - name: Zig build
-        run: zig build --summary all -Dtarget=${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.abi }}
+        run: zig build --summary all -Dtarget=${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.abi }} --release=fast
       - name: Archive compiled version of the project
         run: cd zig-out/${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.abi }} && zip -r ../../${{ matrix.arch }}-${{ matrix.os }}-${{ matrix.abi }}.zip *
       - name: Upload compiled version of the project
