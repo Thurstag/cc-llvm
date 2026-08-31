@@ -70,6 +70,8 @@ fn addLicenses(b: *std.Build, target: std.Target) !*std.Build.Step.WriteFile {
         try zig_licenses.append(b.allocator, .{ .path = "lib/libc/musl/COPYRIGHT", .final_name = "musl" });
     } else if (target.isGnuLibC()) {
         try zig_licenses.append(b.allocator, .{ .path = "lib/libc/glibc/LICENSES", .final_name = "glibc" });
+    } else if (target.isMinGW()) {
+        try zig_licenses.append(b.allocator, .{ .path = "lib/libc/mingw/COPYING", .final_name = "mingw" });
     } else {
         const message = try std.fmt.allocPrint(b.allocator, "The copy of {} libc's license is not implemented", .{target.abi});
         defer b.allocator.free(message);
@@ -176,6 +178,7 @@ const BuildZigZonName = enum {
     cc_llvm,
     cc_llvm_x86_64_linux_musl,
     cc_llvm_x86_64_linux_gnu,
+    cc_llvm_x86_64_windows_gnu,
 };
 
 const BuildZigZon = struct {
@@ -194,6 +197,7 @@ fn checkInstallBuildZigZonFiles(b: *std.Build) !*std.Build.Step {
             const files: []const BuildZigZon = &.{
                 @import("install/build-x86_64-linux-musl.zig.zon"),
                 @import("install/build-x86_64-linux-gnu.zig.zon"),
+                @import("install/build-x86_64-windows-gnu.zig.zon"),
             };
 
             var fingerprints: std.AutoHashMap(u64, void) = .init(step.owner.allocator);
