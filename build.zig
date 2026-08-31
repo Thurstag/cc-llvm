@@ -8,7 +8,7 @@ const build_info = @import("build.zig.zon");
 const ghoti_build_info = @import("submodules/ghoti/build.zig.zon");
 const LLVMBuilder = @import("submodules/ghoti/third-party/llvm/LLVMBuilder.zig");
 
-fn checkLlvmVersion(b: *std.Build) !*std.Build.Step {
+fn checkLlvmVersion(b: *std.Build, optimize: std.builtin.OptimizeMode) !*std.Build.Step {
     const check_llvm_version = "check_llvm_version";
     const check_llvm_version_step = b.step(check_llvm_version, "Check that the version of this package matches the version of the exposed LLVM.");
 
@@ -17,7 +17,7 @@ fn checkLlvmVersion(b: *std.Build) !*std.Build.Step {
         pub fn call(builder: *std.Build, _: []const u8, options: std.Build.Module.CreateOptions) *std.Build.Module {
             return builder.createModule(options);
         }
-    }.call, b, target, std.builtin.OptimizeMode.Debug);
+    }.call, b, target, optimize);
 
     var run_check_llvm_version = b.addRunArtifact(b.addExecutable(.{
         .name = check_llvm_version,
@@ -242,9 +242,9 @@ fn checkInstallBuildZigZonFiles(b: *std.Build) !*std.Build.Step {
     return check;
 }
 
-fn addCheckStep(b: *std.Build) !void {
+fn addCheckStep(b: *std.Build, optimize: std.builtin.OptimizeMode) !void {
     const checks: []const *std.Build.Step = &.{
-        try checkLlvmVersion(b),
+        try checkLlvmVersion(b, optimize),
         try checkGhotiDependencies(b),
         try checkInstallBuildZigZonFiles(b),
     };
@@ -324,5 +324,5 @@ pub fn build(b: *std.Build) !void {
 
     try install(b, moduleWithName.module, licenses, target.query);
 
-    try addCheckStep(b);
+    try addCheckStep(b, optimize);
 }
