@@ -30,7 +30,7 @@ jobs:
           helpURL: https://github.com/rekka-lang/cc-llvm/tree/develop?tab=contributing-ov-file#commits
   install_check:
     name: Install/check project
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-16vcpu-ubuntu-2404
     if: ${{ !github.event.repository.fork }}
     steps:
       - name: Checkout project
@@ -42,4 +42,4 @@ jobs:
       - name: Fetch dependencies
         run: zig build --fetch
       - name: Zig run install+check
-        run: zig build --summary all -Dtarget=x86_64-linux-gnu -Doptimize=ReleaseSafe install check
+        run: zig build --summary all -Dtarget=x86_64-linux-gnu install check
