@@ -7,6 +7,7 @@ on:
 
 jobs:
   archive_repository:
+    name: Archive repository with submodules
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project
@@ -27,8 +28,11 @@ jobs:
     strategy:
       matrix:
         arch: [x86_64]
-        os: [linux]
+        os: [linux, windows]
         abi: [gnu, musl]
+        exclude:
+          - os: windows
+            abi: musl
     steps:
       - name: Checkout project
         uses: actions/checkout@v7
@@ -67,3 +71,4 @@ jobs:
             source.zip
             x86_64-linux-gnu.zip
             x86_64-linux-musl.zip
+            x86_64-windows-gnu.zip
