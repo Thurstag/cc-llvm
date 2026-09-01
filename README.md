@@ -10,16 +10,14 @@ A library exposing the C API of LLVM and offering cross-compilation thanks to [Z
 
 Use `zig fetch`.
 
-[TODO: Switch to a release when it is done]: #
 ```bash
-zig fetch --save git+https://github.com/rekka-lang/cc-llvm.git
+zig fetch --save https://github.com/rekka-lang/cc-llvm/releases/download/v21.1.8+1/source.zip
 ```
 
 You can also add a compiled version of the library to reduce the build time. Here is the command to install the library built for `x86_64-linux-musl`.
 
-[TODO: Switch to a release when it is done]: #
 ```bash
-zig fetch --save https://github.com/rekka-lang/cc-llvm/archive/refs/tags/cc-llvm_x86_64-linux-musl-21.1.8+1.tar.gz
+zig fetch --save https://github.com/rekka-lang/cc-llvm/releases/download/v21.1.8+1/x86_64-linux-musl.zip
 ```
 
 Please refer to the GitHub release to see the available compiled versions.
